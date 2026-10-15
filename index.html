@@ -30,14 +30,14 @@
 </head>
 <body>
 
-<!-- PANTALLA DE ACCESO -->
+<!-- PANTALLA DE ACCESO FIJA -->
 <div class="login-container" id="loginBox">
     <h2 style="color: #ef4444; border: none;">🔒 Acceso de Analistas</h2>
     <p>Introduce la contraseña para acceder al sistema:</p>
     <div class="form-group">
-        <input type="password" id="passwordInput" placeholder="Contraseña de equipo" value="1234">
+        <input type="password" id="passwordInput" placeholder="Contraseña de equipo">
     </div>
-    <button onclick="verificarPassword()">Entrar al Panel</button>
+    <button type="button" onclick="verificarPassword()">Entrar al Panel</button>
     <p id="errorMsg" style="color: #ef4444; display: none; font-weight: bold; margin-top: 10px;">❌ Contraseña incorrecta</p>
 </div>
 
@@ -78,8 +78,8 @@
             <input type="file" id="fotoInput" accept="image/*">
         </div>
 
-        <button onclick="procesarYAgregarDato()">Ingresar al Registro</button>
-        <button class="btn-danger" onclick="borrarDatos()">⚠️ Reiniciar Base de Datos</button>
+        <button type="button" onclick="procesarYAgregarDato()">Ingresar al Registro</button>
+        <button type="button" class="btn-danger" onclick="borrarDatos()">⚠️ Reiniciar Base de Datos</button>
     </div>
     
     <!-- RESULTADOS Y FILTROS -->
@@ -100,17 +100,18 @@
     const CONTRASENIA_SECRETA = "1234";
     let datos = JSON.parse(localStorage.getItem('analisisJugadoresMultiplicadores')) || [];
 
-    actualizarPantalla();
-
     function verificarPassword() {
-        const input = document.getElementById('passwordInput').value;
-        if (input === CONTRASENIA_SECRETA) {
+        const inputVal = document.getElementById('passwordInput').value.trim();
+        const errorElement = document.getElementById('errorMsg');
+        
+        if (inputVal === CONTRASENIA_SECRETA) {
+            errorElement.style.display = 'none';
             document.getElementById('loginBox').style.display = 'none';
             document.getElementById('mainTitle').style.display = 'block';
             document.getElementById('panelDashboard').style.display = 'grid';
             actualizarPantalla();
         } else {
-            document.getElementById('errorMsg').style.display = 'block';
+            errorElement.style.display = 'block';
         }
     }
 
@@ -149,7 +150,7 @@
             lector.readAsDataURL(archivoFoto);
         } else {
             const fotoPorDefecto = 'https://icons8.com';
-            guardarRegistro(jugador, hora, tipo, valor, fotoPorDefecto);
+            guardarRegistro(jugador, hora, tipo, valor, fotoUrl = fotoPorDefecto);
         }
     }
 
@@ -165,7 +166,7 @@
             document.getElementById('fotoInput').value = '';
             document.getElementById('jugadorInput').value = '';
         } catch (e) {
-            alert("⚠️ La captura es muy pesada para guardarse directamente en el navegador. Intenta con una imagen más ligera o recortada.");
+            alert("⚠️ La captura es muy pesada. Reduce la resolución o recortala antes de subirla.");
         }
     }
 
@@ -178,7 +179,7 @@
         let datosFiltrados = datos.filter(item => item.jugador.toLowerCase().includes(filtroNombre));
 
         if (datosFiltrados.length === 0) {
-            lista.innerHTML = '<li>No hay registros que coincidan con la búsqueda.</li>';
+            lista.innerHTML = '<li>No hay registros en la lista.</li>';
         } else {
             let sumaPuntosFiltrados = datosFiltrados.reduce((sum, item) => sum + item.valor, 0);
             
@@ -195,4 +196,3 @@
                     </li>`;
             });
             
-            if (filtroNombre !== "") {
