@@ -5,9 +5,9 @@
     <title>Analizador Estadístico de Jugadores y Multiplicadores</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #1a1a24; color: #e2e8f0; margin: 0; padding: 20px; }
-        .login-container { max-width: 400px; margin: 100px auto; background: #242538; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .dashboard { display: none; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1100px; margin: 0 auto; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1100px; margin: 0 auto; }
         .panel { background: #242538; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h1 { text-align: center; margin-bottom: 30px; color: #f8fafc; }
         h2 { margin-top: 0; color: #6366f1; border-bottom: 2px solid #313244; padding-bottom: 10px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #94a3b8; }
@@ -30,22 +30,10 @@
 </head>
 <body>
 
-<!-- PANTALLA DE ACCESO FIJA -->
-<div class="login-container" id="loginBox">
-    <h2 style="color: #ef4444; border: none;">🔒 Acceso de Analistas</h2>
-    <p>Introduce la contraseña para acceder al sistema:</p>
-    <div class="form-group">
-        <input type="password" id="passwordInput" placeholder="Contraseña de equipo">
-    </div>
-    <button type="button" onclick="verificarPassword()">Entrar al Panel</button>
-    <p id="errorMsg" style="color: #ef4444; display: none; font-weight: bold; margin-top: 10px;">❌ Contraseña incorrecta</p>
-</div>
+<h1>📊 Analizador Estadístico de Rondas y Multiplicadores</h1>
 
-<!-- PANEL DE CONTROL -->
-<h1 id="mainTitle" style="text-align: center; margin-bottom: 30px; display: none;">📊 Analizador Estadístico de Rondas y Multiplicadores</h1>
-
-<div class="dashboard" id="panelDashboard">
-    <!-- INPUTS -->
+<div class="dashboard">
+    <!-- COLUMNA IZQUIERDA: FORMULARIO -->
     <div class="panel">
         <h2>📥 Registrar Ronda Ejecutada</h2>
         
@@ -82,7 +70,7 @@
         <button type="button" class="btn-danger" onclick="borrarDatos()">⚠️ Reiniciar Base de Datos</button>
     </div>
     
-    <!-- RESULTADOS Y FILTROS -->
+    <!-- COLUMNA DERECHA: RESULTADOS Y FILTROS -->
     <div class="panel">
         <h2>🔮 Predicción General del Patrón</h2>
         <div class="prediction-box" id="prediccionBox">
@@ -97,23 +85,10 @@
 </div>
 
 <script>
-    const CONTRASENIA_SECRETA = "1234";
     let datos = JSON.parse(localStorage.getItem('analisisJugadoresMultiplicadores')) || [];
 
-    function verificarPassword() {
-        const inputVal = document.getElementById('passwordInput').value.trim();
-        const errorElement = document.getElementById('errorMsg');
-        
-        if (inputVal === CONTRASENIA_SECRETA) {
-            errorElement.style.display = 'none';
-            document.getElementById('loginBox').style.display = 'none';
-            document.getElementById('mainTitle').style.display = 'block';
-            document.getElementById('panelDashboard').style.display = 'grid';
-            actualizarPantalla();
-        } else {
-            errorElement.style.display = 'block';
-        }
-    }
+    // Mostrar datos al cargar la página directamente
+    actualizarPantalla();
 
     function convertirAMPM(hora24) {
         if (!hora24) return "";
@@ -135,22 +110,22 @@
         const hora = document.getElementById('horaInput').value;
         const tipo = document.getElementById('tipoPez').value;
         const valor = parseInt(document.getElementById('valorInput').value);
-        const archivoFoto = document.getElementById('fotoInput').files[0];
+        const archivoFoto = document.getElementById('fotoInput').files;
 
         if (!jugador || !hora || isNaN(valor)) {
             alert("Por favor rellena el nombre del jugador, la hora y los puntos.");
             return;
         }
 
-        if (archivoFoto) {
+        if (archivoFoto && archivoFoto.length > 0) {
             const lector = new FileReader();
             lector.onload = function(e) {
                 guardarRegistro(jugador, hora, tipo, valor, e.target.result);
             };
-            lector.readAsDataURL(archivoFoto);
+            lector.readAsDataURL(archivoFoto[0]);
         } else {
             const fotoPorDefecto = 'https://icons8.com';
-            guardarRegistro(jugador, hora, tipo, valor, fotoUrl = fotoPorDefecto);
+            guardarRegistro(jugador, hora, tipo, valor, fotoPorDefecto);
         }
     }
 
@@ -166,7 +141,7 @@
             document.getElementById('fotoInput').value = '';
             document.getElementById('jugadorInput').value = '';
         } catch (e) {
-            alert("⚠️ La captura es muy pesada. Reduce la resolución o recortala antes de subirla.");
+            alert("⚠️ La captura es muy pesada. Reduce la resolución o recórtala un poco antes de subirla.");
         }
     }
 
@@ -196,3 +171,29 @@
                     </li>`;
             });
             
+            if (filtroNombre !== "") {
+                lista.insertAdjacentHTML('afterbegin', `<li style="background: #2e304e; border-left-color: #a5b4fc;">📈 <b>Rendimiento de "${filtroNombre}":</b> Acumula <span class="highlight">${sumaPuntosFiltrados} pts</span>.</li>`);
+            }
+        }
+
+        if (datos.length < 2) return;
+
+        const penultimo = datos[datos.length - 2];
+        const ultimo = datos[datos.length - 1];
+        const [h1, m1] = penultimo.hora.split(':').map(Number);
+        const [h2, m2] = ultimo.hora.split(':').map(Number);
+        
+        let min1 = h1 * 60 + m1; let min2 = h2 * 60 + m2;
+        if (min2 < min1) min2 += 1440; 
+        
+        let diferencia = min2 - min1;
+        let proximoTiempo = min2 + diferencia;
+        let proxH = Math.floor((proximoTiempo % 1440) / 60);
+        let proxM = proximoTiempo % 60;
+        let horaEstimadaAMPM = convertirAMPM(`${String(proxH).padStart(2,'0')}:${String(proxM).padStart(2,'0')}`);
+        let tiempoLegible = formatearTiempoTranscurrido(diferencia);
+        let valorEstimado = Math.round((penultimo.valor + ultimo.valor) / 2);
+
+        prediccion.innerHTML = `
+            🔮 <b>Patrón General de Tiempos:</b><br>
+            • Tiempo transcurrido entre los últimos tiros: <span class="highlight">${tiempoLegible}</span>.<br>
